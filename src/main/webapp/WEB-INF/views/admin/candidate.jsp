@@ -33,9 +33,34 @@
             font-weight: bold;
             color: #1976d2;
         }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
         .nav-tabs {
             display: flex;
             gap: 10px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1976d2;
+            font-weight: 500;
+        }
+        .auth-btn {
+            padding: 8px 16px;
+            border: 2px solid #f44336;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #f44336;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .auth-btn:hover {
+            background: #f44336;
+            color: white;
         }
         .nav-tab {
             padding: 10px 20px;
@@ -52,7 +77,7 @@
             color: white;
         }
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         .page-title {
@@ -144,11 +169,19 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">로고 : 관리자</div>
-        <div class="nav-tabs">
-            <a href="/" class="nav-tab">진행중인 투표</a>
-            <a href="/closed" class="nav-tab">마감된 투표</a>
-            <a href="/admin" class="nav-tab active">관리자</a>
+        <div class="logo">Voto-Fi:관리자</div>
+        <div class="header-right">
+            <div class="nav-tabs">
+                <a href="/" class="nav-tab">진행중인 투표</a>
+                <a href="/closed" class="nav-tab">마감된 투표</a>
+                <a href="/admin" class="nav-tab active">관리자</a>
+            </div>
+            <c:if test="${sessionScope.username != null}">
+                <div class="user-info">
+                    <span>${sessionScope.username}님</span>
+                    <a href="/user/logout" class="auth-btn">로그아웃</a>
+                </div>
+            </c:if>
         </div>
     </div>
 
@@ -158,8 +191,8 @@
         </div>
 
         <div class="filter-section">
-            <label>투표 주제 선택:</label>
-            <select id="topicSelect" onchange="changeTopic()">
+            <label>투표 주제 선택 :</label>
+            <select id="topicSelect" onchange="changeTopic()" style="border: 2px solid #ff9800; padding: 10px 20px;">
                 <option value="">선택하세요</option>
                 <c:forEach var="topic" items="${allTopics}">
                     <option value="${topic.id}" ${topic.id == selectedTopicId ? 'selected' : ''}>
@@ -168,10 +201,7 @@
                 </c:forEach>
             </select>
             <c:if test="${not empty selectedTopicId}">
-                <a href="/admin/candidate/create?topicId=${selectedTopicId}" class="btn btn-primary">새 후보 항목 등록</a>
-            </c:if>
-            <c:if test="${empty selectedTopicId}">
-                <p style="color: #999;">투표 주제를 선택하면 후보를 등록할 수 있습니다.</p>
+                <a href="/admin/candidate/create?topicId=${selectedTopicId}" class="btn btn-primary" style="margin-left: auto;">새 후보 항목 등록</a>
             </c:if>
         </div>
 

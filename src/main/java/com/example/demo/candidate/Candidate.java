@@ -24,7 +24,11 @@ public class Candidate {
     
     private Long voteCount = 0L;
     
+    @Column(name = "image_path")
+    private String imagePath;
+    
     @Transient
     private Double votePercentage;
 }
+
 

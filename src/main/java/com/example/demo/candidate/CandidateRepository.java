@@ -8,3 +8,4 @@ public interface CandidateRepository extends JpaRepository<Candidate, Long> {
     List<Candidate> findByVoteTopicIdOrderByVoteCountDesc(Long voteTopicId);
 }
 
+

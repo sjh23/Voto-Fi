@@ -22,7 +22,8 @@ public class CandidateController {
             String name = (String) request.get("name");
             String description = (String) request.get("description");
             
-            Candidate candidate = candidateService.createCandidate(voteTopicId, name, description);
+            // API에서는 이미지 없이 생성 (null 전달)
+            Candidate candidate = candidateService.createCandidate(voteTopicId, name, description, null);
             response.put("success", true);
             response.put("candidate", candidate);
             return ResponseEntity.ok(response);
@@ -57,7 +58,8 @@ public class CandidateController {
             String name = (String) request.get("name");
             String description = (String) request.get("description");
             
-            Candidate candidate = candidateService.updateCandidate(id, name, description);
+            // API에서는 이미지 없이 업데이트 (null 전달)
+            Candidate candidate = candidateService.updateCandidate(id, name, description, null);
             response.put("success", true);
             response.put("candidate", candidate);
             return ResponseEntity.ok(response);
@@ -83,4 +85,5 @@ public class CandidateController {
         }
     }
 }
+
 

@@ -8,6 +8,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${voteTopic.title} - 최종 결과</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -35,9 +37,46 @@
             font-weight: bold;
             color: #1976d2;
         }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
         .nav-tabs {
             display: flex;
             gap: 10px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1976d2;
+            font-weight: 500;
+        }
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .auth-btn {
+            padding: 8px 16px;
+            border: 2px solid #1976d2;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #1976d2;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .auth-btn:hover {
+            background: #1976d2;
+            color: white;
+        }
+        .auth-btn.logout {
+            border-color: #f44336;
+            color: #f44336;
+        }
+        .auth-btn.logout:hover {
+            background: #f44336;
+            color: white;
         }
         .nav-tab {
             padding: 10px 20px;
@@ -54,7 +93,7 @@
             color: white;
         }
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         .title-section {
@@ -141,13 +180,29 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">로고</div>
-        <div class="nav-tabs">
-            <a href="/" class="nav-tab">진행중인 투표</a>
-            <a href="/closed" class="nav-tab">마감된 투표</a>
-            <c:if test="${sessionScope.role == 'ADMIN'}">
-                <a href="/admin" class="nav-tab">관리자</a>
-            </c:if>
+        <div class="logo">Voto-Fi</div>
+        <div class="header-right">
+            <div class="nav-tabs">
+                <a href="/" class="nav-tab">진행중인 투표</a>
+                <a href="/closed" class="nav-tab">마감된 투표</a>
+                <c:if test="${sessionScope.role == 'ADMIN'}">
+                    <a href="/admin" class="nav-tab">관리자</a>
+                </c:if>
+            </div>
+            <c:choose>
+                <c:when test="${sessionScope.userId != null}">
+                    <div class="user-info">
+                        <span>${sessionScope.username}님</span>
+                        <a href="/user/logout" class="auth-btn logout">로그아웃</a>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div class="auth-buttons">
+                        <a href="/login" class="auth-btn">로그인</a>
+                        <a href="/register" class="auth-btn">회원가입</a>
+                    </div>
+                </c:otherwise>
+            </c:choose>
         </div>
     </div>
 
@@ -173,7 +228,14 @@
             <c:forEach var="candidate" items="${candidates}" varStatus="status">
                 <div class="ranking-item">
                     <div class="rank-number">${status.count}</div>
-                    <div class="candidate-photo">사진</div>
+                    <div class="candidate-photo">
+                        <c:if test="${not empty candidate.imagePath}">
+                            <img src="${candidate.imagePath}" alt="${candidate.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 5px;">
+                        </c:if>
+                        <c:if test="${empty candidate.imagePath}">
+                            사진
+                        </c:if>
+                    </div>
                     <div class="candidate-info">
                         <div class="candidate-name">${candidate.name}</div>
                         <div class="candidate-votes">
@@ -202,9 +264,60 @@
         const votes = candidates.map(c => c.votes);
         const percentages = candidates.map(c => c.percentage);
 
-        // 막대 그래프
+
+        // WebSocket 연결 설정
+        const socket = new SockJS('/ws');
+        const stompClient = Stomp.over(socket);
+        
+        stompClient.connect({}, function(frame) {
+            console.log('WebSocket 연결됨: ' + frame);
+            
+            // 투표 업데이트 구독
+            stompClient.subscribe('/topic/vote-updates/${voteTopic.id}', function(update) {
+                const data = JSON.parse(update.body);
+                updateCharts(data);
+            });
+        }, function(error) {
+            console.log('WebSocket 연결 오류: ' + error);
+        });
+        
+        function updateCharts(data) {
+            // 차트 데이터 업데이트
+            const candidates = data.candidates;
+            const labels = candidates.map(c => c.name);
+            const votes = candidates.map(c => c.voteCount || 0);
+            const percentages = candidates.map(c => c.votePercentage || 0);
+            
+            // 막대 그래프 업데이트
+            if (window.barChart) {
+                window.barChart.data.labels = labels;
+                window.barChart.data.datasets[0].data = votes;
+                window.barChart.update();
+            }
+            
+            // 원형 그래프 업데이트
+            if (window.pieChart) {
+                window.pieChart.data.labels = labels;
+                window.pieChart.data.datasets[0].data = percentages;
+                window.pieChart.update();
+            }
+            
+            // 총 투표수 업데이트
+            if (data.totalVotes !== undefined) {
+                const totalVotesElement = document.querySelector('.total-votes');
+                if (totalVotesElement) {
+                    totalVotesElement.textContent = data.totalVotes;
+                }
+            }
+        }
+        
+        // 차트 인스턴스를 전역 변수로 저장
+        window.barChart = null;
+        window.pieChart = null;
+        
+        // 기존 차트 생성 코드 수정
         const barCtx = document.getElementById('barChart').getContext('2d');
-        new Chart(barCtx, {
+        window.barChart = new Chart(barCtx, {
             type: 'bar',
             data: {
                 labels: labels,
@@ -236,9 +349,8 @@
             }
         });
 
-        // 원형 그래프
         const pieCtx = document.getElementById('pieChart').getContext('2d');
-        new Chart(pieCtx, {
+        window.pieChart = new Chart(pieCtx, {
             type: 'pie',
             data: {
                 labels: labels,
@@ -254,7 +366,7 @@
                         'rgba(25, 118, 210, 1)',
                         'rgba(76, 175, 80, 1)',
                         'rgba(255, 152, 0, 1)',
-                        'rgarta(156, 39, 176, 1)'
+                        'rgba(156, 39, 176, 1)'
                     ],
                     borderWidth: 1
                 }]

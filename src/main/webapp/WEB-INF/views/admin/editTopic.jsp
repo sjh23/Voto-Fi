@@ -128,28 +128,27 @@
         }
     </style>
     <script>
-        function formatDateTime(dateTimeString) {
-            const date = new Date(dateTimeString);
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
-        }
-        
         window.addEventListener('load', function() {
             const deadlineInput = document.getElementById('deadline');
             const deadlineValue = deadlineInput.getAttribute('data-deadline');
             if (deadlineValue) {
-                deadlineInput.value = formatDateTime(deadlineValue);
+                // LocalDateTime 형식: "2025-12-13T11:58:00" 또는 "2025-12-13T11:58"
+                let formattedValue = deadlineValue;
+                if (formattedValue.includes('T')) {
+                    // datetime-local 형식으로 변환 (초 제거)
+                    formattedValue = formattedValue.substring(0, 16);
+                } else if (formattedValue.includes(' ')) {
+                    // 공백으로 구분된 형식: "2025-12-13 11:58"
+                    formattedValue = formattedValue.replace(' ', 'T');
+                }
+                deadlineInput.value = formattedValue;
             }
         });
     </script>
 </head>
 <body>
     <div class="header">
-        <div class="logo">로고 : 관리자</div>
+        <div class="logo">Voto-Fi:관리자</div>
         <div class="nav-tabs">
             <a href="/" class="nav-tab">진행중인 투표</a>
             <a href="/closed" class="nav-tab">마감된 투표</a>
@@ -182,7 +181,7 @@
                 <div class="form-group">
                     <label>마감 시간 *</label>
                     <input type="datetime-local" name="deadline" id="deadline" 
-                           data-deadline="${topic.deadline}" required>
+                           data-deadline="${topic.deadline}" required step="60">
                 </div>
                 
                 <div class="btn-group">

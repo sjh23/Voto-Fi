@@ -34,9 +34,34 @@
             font-weight: bold;
             color: #1976d2;
         }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
         .nav-tabs {
             display: flex;
             gap: 10px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1976d2;
+            font-weight: 500;
+        }
+        .auth-btn {
+            padding: 8px 16px;
+            border: 2px solid #f44336;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #f44336;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .auth-btn:hover {
+            background: #f44336;
+            color: white;
         }
         .nav-tab {
             padding: 10px 20px;
@@ -53,7 +78,7 @@
             color: white;
         }
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         .page-title {
@@ -116,7 +141,7 @@
         }
         .stats {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -148,15 +173,63 @@
             color: #ff9800;
             font-weight: bold;
         }
+        .status-rejected {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 30px;
+            padding: 20px;
+        }
+        .pagination a, .pagination span {
+            padding: 10px 16px;
+            border: 1px solid #1976d2;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #1976d2;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s;
+            min-width: 40px;
+            text-align: center;
+            display: inline-block;
+            background: white;
+        }
+        .pagination a:hover {
+            background: #e3f2fd;
+        }
+        .pagination .active {
+            background: #1976d2;
+            color: white;
+            border-color: #1976d2;
+            font-weight: 500;
+        }
+        .pagination .disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="logo">로고 : 관리자</div>
-        <div class="nav-tabs">
-            <a href="/" class="nav-tab">진행중인 투표</a>
-            <a href="/closed" class="nav-tab">마감된 투표</a>
-            <a href="/admin" class="nav-tab active">관리자</a>
+        <div class="logo">Voto-Fi:관리자</div>
+        <div class="header-right">
+            <div class="nav-tabs">
+                <a href="/" class="nav-tab">진행중인 투표</a>
+                <a href="/closed" class="nav-tab">마감된 투표</a>
+                <a href="/admin" class="nav-tab active">관리자</a>
+            </div>
+            <c:if test="${sessionScope.username != null}">
+                <div class="user-info">
+                    <span>${sessionScope.username}님</span>
+                    <a href="/user/logout" class="auth-btn">로그아웃</a>
+                </div>
+            </c:if>
         </div>
     </div>
 
@@ -164,6 +237,19 @@
         <div class="page-title">
             <h1 style="color: #1976d2;">투표 주제 관리</h1>
             <a href="/admin/topic/create" class="btn btn-primary">새 투표 주제 등록</a>
+        </div>
+        
+        <!-- 검색 기능 -->
+        <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <form action="/admin" method="get" style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" name="search" value="${searchKeyword != null ? searchKeyword : ''}" 
+                       placeholder="투표 제목으로 검색..." 
+                       style="flex: 1; padding: 12px; border: 2px solid #1976d2; border-radius: 5px; font-size: 16px;">
+                <button type="submit" style="padding: 12px 24px; background: #1976d2; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: 500;">검색</button>
+                <c:if test="${searchKeyword != null && !empty searchKeyword}">
+                    <a href="/admin" style="padding: 12px 24px; background: #757575; color: white; border: none; border-radius: 5px; font-size: 16px; text-decoration: none; display: inline-block;">초기화</a>
+                </c:if>
+            </form>
         </div>
 
         <div class="stats">
@@ -176,15 +262,70 @@
                 <div class="number">${ongoingTopics}</div>
             </div>
             <div class="stat-box">
+                <h3>승인 대기</h3>
+                <div class="number">${pendingTopics.size()}</div>
+            </div>
+            <div class="stat-box">
                 <h3>총 투표 참여</h3>
                 <div class="number"><fmt:formatNumber value="${totalVotes}" pattern="#,###" /></div>
             </div>
         </div>
+        
+        <c:if test="${not empty pendingTopics}">
+            <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <h2 style="color: #ff9800; margin-bottom: 15px;">승인 대기 중인 투표</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>제목</th>
+                            <th>생성일</th>
+                            <th>마감일</th>
+                            <th>생성자</th>
+                            <th>승인/거부</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <c:forEach var="topic" items="${pendingTopics}">
+                            <tr>
+                                <td>${topic.title}</td>
+                                <td>${topic.createdAt != null ? topic.createdAt.toString().substring(0, 10) : ''}</td>
+                                <td>${topic.deadline.toString().substring(0, 10)}</td>
+                                <td>
+                                    <c:choose>
+                                        <c:when test="${topic.createdBy != null}">
+                                            <c:set var="creatorName" value="${creatorMap[topic.id]}" />
+                                            <c:choose>
+                                                <c:when test="${not empty creatorName}">
+                                                    ${creatorName}
+                                                </c:when>
+                                                <c:otherwise>
+                                                    일반 사용자
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </c:when>
+                                        <c:otherwise>
+                                            관리자
+                                        </c:otherwise>
+                                    </c:choose>
+                                </td>
+                                <td>
+                                    <form action="/admin/topic/${topic.id}/approve" method="post" style="display:inline;">
+                                        <button type="submit" class="btn btn-primary" style="padding: 5px 15px; font-size: 14px;">승인</button>
+                                    </form>
+                                    <a href="/admin/topic/${topic.id}/reject" class="btn btn-delete" style="padding: 5px 15px; font-size: 14px; text-decoration: none; display: inline-block;">거부</a>
+                                </td>
+                            </tr>
+                        </c:forEach>
+                    </tbody>
+                </table>
+            </div>
+        </c:if>
 
         <table>
             <thead>
                 <tr>
                     <th>제목</th>
+                    <th>생성자</th>
                     <th>시작일</th>
                     <th>마감일</th>
                     <th>상태</th>
@@ -196,8 +337,30 @@
                 <c:forEach var="topic" items="${topics}">
                     <tr>
                         <td>${topic.title}</td>
-                        <td><fmt:formatDate value="${topic.createdAt}" pattern="yyyy-MM-dd" /></td>
-                        <td><fmt:formatDate value="${topic.deadline}" pattern="yyyy-MM-dd" /></td>
+                        <td>
+                            <c:set var="creatorRole" value="${creatorRoleMap[topic.id]}" />
+                            <c:choose>
+                                <c:when test="${creatorRole eq 'ADMIN'}">
+                                    <span style="color: #1976d2; font-weight: bold;">관리자</span>
+                                </c:when>
+                                <c:when test="${topic.createdBy != null && creatorRole != 'ADMIN'}">
+                                    <c:set var="creatorName" value="${allCreatorMap[topic.id]}" />
+                                    <c:choose>
+                                        <c:when test="${not empty creatorName}">
+                                            ${creatorName}
+                                        </c:when>
+                                        <c:otherwise>
+                                            일반 사용자
+                                        </c:otherwise>
+                                    </c:choose>
+                                </c:when>
+                                <c:otherwise>
+                                    <span style="color: #1976d2; font-weight: bold;">관리자</span>
+                                </c:otherwise>
+                            </c:choose>
+                        </td>
+                        <td>${topic.createdAt != null ? topic.createdAt.toString().substring(0, 10) : ''}</td>
+                        <td>${topic.deadline.toString().substring(0, 10)}</td>
                         <td>
                             <c:choose>
                                 <c:when test="${topic.status == 'ONGOING'}">
@@ -205,6 +368,9 @@
                                 </c:when>
                                 <c:when test="${topic.status == 'CLOSED'}">
                                     <span class="status-closed">마감</span>
+                                </c:when>
+                                <c:when test="${topic.status == 'REJECTED'}">
+                                    <span class="status-rejected">거부됨</span>
                                 </c:when>
                                 <c:otherwise>
                                     <span class="status-pending">대기중</span>
@@ -222,6 +388,85 @@
                 </c:forEach>
             </tbody>
         </table>
+        
+        <!-- 페이지네이션 -->
+        <c:if test="${totalPages > 1}">
+            <div class="pagination">
+                <!-- 페이지 번호 -->
+                <c:choose>
+                    <c:when test="${totalPages <= 10}">
+                        <c:forEach var="i" begin="0" end="${totalPages - 1}">
+                            <c:choose>
+                                <c:when test="${i == currentPage}">
+                                    <span class="active">${i + 1}</span>
+                                </c:when>
+                                <c:otherwise>
+                                    <a href="/admin?page=${i}<c:if test='${searchKeyword != null && !empty searchKeyword}'>&search=${searchKeyword}</c:if>">${i + 1}</a>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
+                    </c:when>
+                    <c:otherwise>
+                        <c:choose>
+                            <c:when test="${currentPage < 5}">
+                                <c:forEach var="i" begin="0" end="9">
+                                    <c:choose>
+                                        <c:when test="${i == currentPage}">
+                                            <span class="active">${i + 1}</span>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <a href="/admin?page=${i}<c:if test='${searchKeyword != null && !empty searchKeyword}'>&search=${searchKeyword}</c:if>">${i + 1}</a>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </c:forEach>
+                                <span style="padding: 10px 5px; color: #1976d2;">...</span>
+                                <a href="/admin?page=${totalPages - 1}<c:if test='${searchKeyword != null && !empty searchKeyword}'>&search=${searchKeyword}</c:if>">${totalPages}</a>
+                            </c:when>
+                            <c:when test="${currentPage >= totalPages - 5}">
+                                <a href="/admin?page=0<c:if test='${searchKeyword != null && !empty searchKeyword}'>&search=${searchKeyword}</c:if>">1</a>
+                                <span style="padding: 10px 5px; color: #1976d2;">...</span>
+                                <c:forEach var="i" begin="${totalPages - 10}" end="${totalPages - 1}">
+                                    <c:choose>
+                                        <c:when test="${i == currentPage}">
+                                            <span class="active">${i + 1}</span>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <a href="/admin?page=${i}<c:if test='${searchKeyword != null && !empty searchKeyword}'>&search=${searchKeyword}</c:if>">${i + 1}</a>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </c:forEach>
+                            </c:when>
+                            <c:otherwise>
+                                <a href="/admin?page=0<c:if test='${searchKeyword != null && !empty searchKeyword}'>&search=${searchKeyword}</c:if>">1</a>
+                                <span style="padding: 10px 5px; color: #1976d2;">...</span>
+                                <c:forEach var="i" begin="${currentPage - 2}" end="${currentPage + 2}">
+                                    <c:choose>
+                                        <c:when test="${i == currentPage}">
+                                            <span class="active">${i + 1}</span>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <a href="/admin?page=${i}<c:if test='${searchKeyword != null && !empty searchKeyword}'>&search=${searchKeyword}</c:if>">${i + 1}</a>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </c:forEach>
+                                <span style="padding: 10px 5px; color: #1976d2;">...</span>
+                                <a href="/admin?page=${totalPages - 1}<c:if test='${searchKeyword != null && !empty searchKeyword}'>&search=${searchKeyword}</c:if>">${totalPages}</a>
+                            </c:otherwise>
+                        </c:choose>
+                    </c:otherwise>
+                </c:choose>
+                
+                <!-- 다음 페이지 -->
+                <c:if test="${currentPage < totalPages - 1}">
+                    <a href="/admin?page=${currentPage + 1}<c:if test='${searchKeyword != null && !empty searchKeyword}'>&search=${searchKeyword}</c:if>">다음 ></a>
+                </c:if>
+                
+                <!-- 마지막 페이지 -->
+                <c:if test="${currentPage < totalPages - 1}">
+                    <a href="/admin?page=${totalPages - 1}<c:if test='${searchKeyword != null && !empty searchKeyword}'>&search=${searchKeyword}</c:if>">마지막 »</a>
+                </c:if>
+            </div>
+        </c:if>
     </div>
 </body>
 </html>

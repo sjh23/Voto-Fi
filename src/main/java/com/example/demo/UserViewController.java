@@ -5,7 +5,6 @@ import com.example.demo.user.UserService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -17,9 +16,9 @@ public class UserViewController {
     private UserService userService;
     
     @PostMapping("/register")
-    public String register(@RequestParam String username,
-                          @RequestParam String password,
-                          @RequestParam String email,
+    public String register(@RequestParam("username") String username,
+                          @RequestParam("password") String password,
+                          @RequestParam("email") String email,
                           RedirectAttributes redirectAttributes) {
         try {
             userService.createUser(username, password, email);
@@ -32,19 +31,19 @@ public class UserViewController {
     }
     
     @PostMapping("/login")
-    public String login(@RequestParam String username,
-                       @RequestParam String password,
+    public String login(@RequestParam("email") String email,
+                       @RequestParam("password") String password,
                        HttpSession session,
                        RedirectAttributes redirectAttributes) {
         try {
-            if (userService.validateUser(username, password)) {
-                User user = userService.findByUsername(username).orElseThrow();
+            if (userService.validateUserByEmail(email, password)) {
+                User user = userService.findByEmail(email).orElseThrow();
                 session.setAttribute("userId", user.getId());
                 session.setAttribute("username", user.getUsername());
                 session.setAttribute("role", user.getRole());
                 return "redirect:/";
             } else {
-                redirectAttributes.addFlashAttribute("error", "아이디 또는 비밀번호가 잘못되었습니다.");
+                redirectAttributes.addFlashAttribute("error", "이메일 또는 비밀번호가 잘못되었습니다.");
                 return "redirect:/login";
             }
         } catch (Exception e) {
@@ -59,4 +58,5 @@ public class UserViewController {
         return "redirect:/";
     }
 }
+
 

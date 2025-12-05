@@ -84,13 +84,18 @@
 <body>
     <div class="login-container">
         <h1>로그인</h1>
+        <c:if test="${not empty message}">
+            <div style="background: #e8f5e9; color: #2e7d32; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+                ${message}
+            </div>
+        </c:if>
         <c:if test="${not empty error}">
             <div class="error">${error}</div>
         </c:if>
         <form action="/user/login" method="post">
             <div class="form-group">
-                <label>사용자명</label>
-                <input type="text" name="username" required>
+                <label>이메일</label>
+                <input type="email" name="email" required>
             </div>
             <div class="form-group">
                 <label>비밀번호</label>

@@ -136,7 +136,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">로고 : 관리자</div>
+        <div class="logo">Voto-Fi:관리자</div>
         <div class="nav-tabs">
             <a href="/" class="nav-tab">진행중인 투표</a>
             <a href="/closed" class="nav-tab">마감된 투표</a>
@@ -155,7 +155,7 @@
                 <div class="message">${message}</div>
             </c:if>
             
-            <form action="/admin/candidate/create" method="post">
+            <form action="/admin/candidate/create" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="voteTopicId" value="${param.topicId}">
                 
                 <div class="form-group">
@@ -171,6 +171,12 @@
                 <div class="form-group">
                     <label>설명</label>
                     <textarea name="description" placeholder="후보에 대한 설명을 입력하세요"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>후보 이미지</label>
+                    <input type="file" name="imageFile" accept="image/*">
+                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">JPG, PNG, GIF 형식만 지원됩니다. (최대 10MB)</small>
                 </div>
                 
                 <div class="btn-group">

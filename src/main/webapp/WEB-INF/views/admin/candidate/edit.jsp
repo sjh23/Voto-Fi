@@ -129,7 +129,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">로고 : 관리자</div>
+        <div class="logo">Voto-Fi:관리자</div>
         <div class="nav-tabs">
             <a href="/" class="nav-tab">진행중인 투표</a>
             <a href="/closed" class="nav-tab">마감된 투표</a>
@@ -148,7 +148,7 @@
                 <div class="message">${message}</div>
             </c:if>
             
-            <form action="/admin/candidate/${candidate.id}/edit" method="post">
+            <form action="/admin/candidate/${candidate.id}/edit" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="topicId" value="${param.topicId}">
                 
                 <div class="form-group">
@@ -159,6 +159,22 @@
                 <div class="form-group">
                     <label>설명</label>
                     <textarea name="description">${candidate.description}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>현재 이미지</label>
+                    <c:if test="${not empty candidate.imagePath}">
+                        <img src="${candidate.imagePath}" alt="현재 이미지" style="max-width: 200px; max-height: 200px; display: block; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                    </c:if>
+                    <c:if test="${empty candidate.imagePath}">
+                        <p style="color: #999; font-size: 14px;">이미지가 없습니다.</p>
+                    </c:if>
+                </div>
+                
+                <div class="form-group">
+                    <label>새 이미지 업로드</label>
+                    <input type="file" name="imageFile" accept="image/*">
+                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">JPG, PNG, GIF 형식만 지원됩니다. (최대 10MB)</small>
                 </div>
                 
                 <div class="btn-group">
